@@ -18,7 +18,7 @@ Oh no.
 
 Arriving to the crime scene, there were clear signs of foul play.
 
-We make heavy usage of L2-[GRE](https://en.wikipedia.org/wiki/Generic_Routing_Encapsulation)s <sup>[1](/blurb/gre)</sup> in some of our products,
+We make heavy usage of L2-[GRE](https://en.wikipedia.org/wiki/Generic_Routing_Encapsulation)s in some of our products,
 usually assigning them a MAC address matching one of an actual physical interface somewhere.
 
 A cursory glance at `tcpdump`'s output for the faulty GRE interface shows that IPv4 traffic *does* reach us, and it even _seems_ to have the correct MAC and IP addresses.
@@ -146,14 +146,12 @@ It seems to happen quite a lot, and it was easily verified with tcpdump:
 **All packets** had `ECT(1)` on the outer header and `Non-ECT` on the inner.
 
 This alone, however, should not cause traffic to drop.
-Sorry, slip of the tongue - traffic wasn't dropped, and you could see no trace of drops in `ip -s link`.
-
-My traffic was **brutally murdered** by a wild overwrite.
+Sorry, slip of the tongue - traffic wasn't dropped, per se, and you could see no trace of drops in `ip -s link`.
 
 ## Minimal reproducer ##
 
 Well, nothing more could be done on a production environment.
-Our product is too large and complex - SNR is too low.
+Our product is too large and complex - our logs' SNR is too low.
 
 Time to try and reproduce this in a vaccum:
 
@@ -189,7 +187,7 @@ $ sudo ip netns exec B tcpdump -neqlllvi gre1 icmp & ; sleep 1
 $ sudo ip netns exec A python3 send_pkt.py
 ```
 
-This packet is an `IPv4/GRE/Ethernet/IPv4/ICMP(echo request)` packet - a ping over a GRE-tap.
+This packet is an `IPv4/GRE/Ethernet/IPv4/ICMP(echo request)` packet - a ping over an L2-GRE.
 Sure enough, this was enough to trigger this bug on my Ubuntu 20.04 machine (Kernel v5.4), and on a few of my friends' machines (Kernel v5.12).
 
 Running this script on the previous version of Ubuntu we used, 18.04 (Kernel 4.15), did not trigger the bug.
@@ -255,7 +253,7 @@ What?...
 
 Okay, so I've messed up.
 You might have guessed it, but all of this time I've been operating under this implicit assumption
-that the kernel that the kernel shipped with with Ubuntu is the regular, mainline, vanilla, stock kernel.
+that the kernel that's shipped with with Ubuntu is the regular, mainline, vanilla, stock kernel.
 
 Good ol' kernel.
 
@@ -372,9 +370,9 @@ static inline void skb_reset_network_header(struct sk_buff *skb)
 ```
 
 At this point in the processing pipeline, the kernel just stripped the tunnel header and starts to process the next header.
-When the tunnel is a regular GRE (probably most of the time), the next header is a network header (IPv4/IPv6/etc.), so setting the network header offset to the cursor makes sense.
+When the tunnel is a regular L3-GRE (probably most of the time), the next header is a network header (IPv4/IPv6/etc.), so setting the network header offset to the cursor makes sense.
 
-Since we use GRE-tap (probably rare), the next header is sadly, an Ethernet header, rendering this reset incorrect.
+Since we use L2-GRE (probably rare), the next header is sadly, an Ethernet header, rendering this reset incorrect.
 We need to make sure that the correct offset is set:
 ```diff
 -	skb_reset_network_header(skb);
@@ -385,7 +383,7 @@ We need to make sure that the correct offset is set:
 Kernel got confused between headers; [patched via one line](https://git.kernel.org/pub/scm/linux/kernel/git/netdev/net.git/commit/?id=227adfb2b1df).
 
 ## The correct fix ##
-A friend of mIne which uSuAlly wAnts to remain anonymous, notiCed that problem is a bit larger than that particular piece of code in `ip_tunnel.c`.
+A friend of m**I**ne which u**S**u**A**lly w**A**nts to remain anonymous, noti**C**ed that problem is a bit larger than that particular piece of code in `ip_tunnel.c`.
 
 For a brief moment in the pipeline, the `skb` struct is invalid: `skb->protocol` tells us that the next protocol is IPv4, but `data` points to the start of the Ethernet header.
 
@@ -456,8 +454,3 @@ index 322698d9fcf4..afeba4ebc6e2 100644
  	if (tunnel->dev->type == ARPHRD_ETHER) {
  		if (!pskb_may_pull(skb, ETH_HLEN)) {
 ```
-
-## kpatch ##
-(TODO)
-#### DELETE THIS (drafts) ####
-Well, no choice but use the ultimate tool for diagnosing network problems — helplessly staring at various `tcpdump`s with differing options.
