@@ -257,10 +257,11 @@ that the kernel that's shipped with with Ubuntu is the regular, mainline, vanill
 
 Good ol' kernel.
 
-But this is obviously false - Ubuntu's release model doesn't allow it just upgrade any software version to the next major version. But if the software stays the same over time, it will not get any security fixes.
+But this is obviously false - Ubuntu's release model doesn't allow it to just upgrade any software to its next major version.
+But if the software stays the same over time, it will not get any security fixes or bug fixes.
 So Ubuntu's maintainers do what any reasonable maintainer does - they backport patchsets from newer kernel versions.
 
-The kernels the come with Ubuntu out-of-the-box are patched, but the kernels that are provided in https://wiki.ubuntu.com/Kernel/MainlineBuilds, are, well, mainline.
+The kernels that come with Ubuntu out-of-the-box are patched, but the kernels that are provided in https://wiki.ubuntu.com/Kernel/MainlineBuilds, are, well, mainline.
 
 So this bug, presumably, was either backported from a later version, or introduced by a botched application of a patch.
 
