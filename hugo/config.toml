@@ -36,7 +36,7 @@ unsafe= true
   hidecolorschemetoggle = false
   disableComments = true
 
-#   customCSS = ["css/custom.css"]
+  customCSS = ["css/custom.css"]
 #   customSCSS = ["scss/custom.scss"]
 #   customJS = ["js/custom.js"]
 

@@ -1,0 +1,12 @@
+.avatar img {
+    outline: 5px solid #a83293;
+}
+
+.navigation-link {
+    text-decoration: overline #a83293 3px;
+}
+
+.navigation-link:hover {
+    text-decoration: overline #a83293 3px;
+    color:#d68fc9 !important;
+}
